@@ -1,3 +1,4 @@
+import {ChangeEvent} from 'react';
 import accepts from 'attr-accept'
 
 export const supportMultiple =
@@ -5,9 +6,12 @@ export const supportMultiple =
     ? 'multiple' in document.createElement('input')
     : true
 
-export function getDataTransferItems(event) {
-  let dataTransferItemsList = []
-  if (event.dataTransfer) {
+type DragOrInputEvent = React.DragEvent | ChangeEvent<HTMLInputElement>;
+
+export function getDataTransferItems(event: DragOrInputEvent): Array<File | DataTransferItem> {
+  let dataTransferItemsList: any = []
+
+  if (isDragEvent(event)) {
     const dt = event.dataTransfer
 
     // NOTE: Only the 'drop' event has access to DataTransfer.files,
@@ -19,30 +23,39 @@ export function getDataTransferItems(event) {
       // but Chrome implements some drag store, which is accesible via dataTransfer.items
       dataTransferItemsList = dt.items
     }
-  } else if (event.target && event.target.files) {
+  } else if (isInputEvent(event)) {
     dataTransferItemsList = event.target.files
   }
 
-  // Convert from DataTransferItemsList to the native Array
+  // Convert from FileList/DataTransferItemsList to the native Array
   return Array.prototype.slice.call(dataTransferItemsList)
 }
 
+function isDragEvent(evt: DragOrInputEvent): evt is React.DragEvent {
+  return (evt as any).dataTransfer;
+}
+
+function isInputEvent(evt: DragOrInputEvent): evt is ChangeEvent<HTMLInputElement> {
+  return event.target && (event.target as any).files
+}
+
+
 // Firefox versions prior to 53 return a bogus MIME type for every file drag, so dragovers with
 // that MIME type will always be accepted
-export function fileAccepted(file, accept) {
+export function fileAccepted(file: File | DataTransferItem, accept) {
   return file.type === 'application/x-moz-file' || accepts(file, accept)
 }
 
-export function fileMatchSize(file, maxSize, minSize) {
+export function fileMatchSize(file: File, maxSize?: number, minSize?: number) {
   return file.size <= maxSize && file.size >= minSize
 }
 
-export function allFilesAccepted(files, accept) {
+export function allFilesAccepted(files: Array<File | DataTransferItem>, accept) {
   return files.every(file => fileAccepted(file, accept))
 }
 
-export function isDragDataWithFiles(evt) {
-  if (!evt.dataTransfer) {
+export function isDragDataWithFiles(evt: DragOrInputEvent) {
+  if (!isDragEvent(evt)) {
     return true
   }
   // https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/types
@@ -53,24 +66,20 @@ export function isDragDataWithFiles(evt) {
   )
 }
 
-export function isKindFile(item) {
-  return typeof item === 'object' && item !== null && item.kind === 'file'
-}
-
-// allow the entire document to be a drag target
-export function onDocumentDragOver(evt) {
+// Allow the entire document to be a drag target
+export function onDocumentDragOver(evt: DragEvent) {
   evt.preventDefault()
 }
 
-function isIe(userAgent) {
+function isIe(userAgent: string) {
   return userAgent.indexOf('MSIE') !== -1 || userAgent.indexOf('Trident/') !== -1
 }
 
-function isEdge(userAgent) {
+function isEdge(userAgent: string) {
   return userAgent.indexOf('Edge/') !== -1
 }
 
-export function isIeOrEdge(userAgent = window.navigator.userAgent) {
+export function isIeOrEdge(userAgent: string = window.navigator.userAgent) {
   return isIe(userAgent) || isEdge(userAgent)
 }
 
@@ -78,11 +87,11 @@ export function isIeOrEdge(userAgent = window.navigator.userAgent) {
  * This is intended to be used to compose event handlers
  * They are executed in order until one of them calls `event.preventDefault()`.
  * Not sure this is the best way to do this, but it seems legit.
- * @param {Function} fns the event hanlder functions
- * @return {Function} the event handler to add to an element
+ * @param fns Event handler functions
+ * @return An event handler to add to an element
  */
-export function composeEventHandlers(...fns) {
-  return (event, ...args) =>
+export function composeEventHandlers(...fns: Array<(...args: any[]) => void>) {
+  return (event: any, ...args: any[]) =>
     fns.some(fn => {
       fn && fn(event, ...args)
       return event.defaultPrevented

@@ -1,7 +1,16 @@
-/* eslint prefer-template: 0 */
+import React, {
+  ChangeEvent,
+  Component,
+  FocusEvent,
+  HTMLAttributes,
+  HTMLProps,
+  InputHTMLAttributes,
+  KeyboardEvent,
+  MouseEvent
+} from 'react'
 
-import React from 'react'
 import PropTypes from 'prop-types'
+
 import {
   isDragDataWithFiles,
   supportMultiple,
@@ -14,16 +23,21 @@ import {
   composeEventHandlers
 } from './utils'
 
-class Dropzone extends React.Component {
-  state = {
+
+class Dropzone extends Component<DropzoneProps, State> {
+  state: State = {
     draggedFiles: [],
     acceptedFiles: [],
     rejectedFiles: []
   }
 
+  dragTargets: EventTarget[] = []
+  draggedFiles: Files | null;
+  node?: HTMLElement;
+  input?: HTMLInputElement;
+
   componentDidMount() {
     const { preventDropOnDocument } = this.props
-    this.dragTargets = []
 
     if (preventDropOnDocument) {
       document.addEventListener('dragover', onDocumentDragOver, false)
@@ -45,8 +59,8 @@ class Dropzone extends React.Component {
 
   isFileDialogActive = false
 
-  onDocumentDrop = evt => {
-    if (this.node && this.node.contains(evt.target)) {
+  onDocumentDrop = (evt: DragEvent) => {
+    if (this.node && this.node.contains(evt.target as HTMLElement)) {
       // if we intercepted an event for our instance, let it propagate down to the instance's onDrop handler
       return
     }
@@ -54,14 +68,14 @@ class Dropzone extends React.Component {
     this.dragTargets = []
   }
 
-  onDragStart = evt => {
+  onDragStart = (evt: React.DragEvent) => {
     evt.persist()
     if (this.props.onDragStart && isDragDataWithFiles(evt)) {
       this.props.onDragStart.call(this, evt)
     }
   }
 
-  onDragEnter = evt => {
+  onDragEnter = (evt: React.DragEvent) => {
     evt.preventDefault()
 
     // Count the dropzone and any children that are entered.
@@ -90,7 +104,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onDragOver = evt => {
+  onDragOver = (evt: React.DragEvent) => {
     // eslint-disable-line class-methods-use-this
     evt.preventDefault()
     evt.persist()
@@ -102,12 +116,12 @@ class Dropzone extends React.Component {
     return false
   }
 
-  onDragLeave = evt => {
+  onDragLeave = (evt: React.DragEvent) => {
     evt.preventDefault()
     evt.persist()
 
     // Only deactivate once the dropzone and all children have been left.
-    this.dragTargets = this.dragTargets.filter(el => el !== evt.target && this.node.contains(el))
+    this.dragTargets = this.dragTargets.filter(el => el !== evt.target && this.node.contains(el as HTMLElement))
     if (this.dragTargets.length > 0) {
       return
     }
@@ -123,7 +137,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onDrop = evt => {
+  onDrop = (evt: React.DragEvent) => {
     const {
       onDrop,
       onDropAccepted,
@@ -198,7 +212,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onClick = evt => {
+  onClick = (evt: MouseEvent) => {
     const { onClick, disableClick } = this.props
 
     // if onClick prop is given, run it first
@@ -222,7 +236,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onInputElementClick = evt => {
+  onInputElementClick = (evt: MouseEvent<HTMLInputElement>) => {
     evt.stopPropagation()
   }
 
@@ -248,7 +262,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onFocus = evt => {
+  onFocus = (evt: FocusEvent) => {
     const { onFocus } = this.props
     if (onFocus) {
       onFocus.call(this, evt)
@@ -258,7 +272,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onBlur = evt => {
+  onBlur = (evt: FocusEvent) => {
     const { onBlur } = this.props
     if (onBlur) {
       onBlur.call(this, evt)
@@ -268,7 +282,7 @@ class Dropzone extends React.Component {
     }
   }
 
-  onKeyDown = evt => {
+  onKeyDown = (evt: KeyboardEvent) => {
     const { onKeyDown } = this.props
     if (onKeyDown) {
       onKeyDown.call(this, evt)
@@ -298,7 +312,7 @@ class Dropzone extends React.Component {
     onDragLeave,
     onDrop,
     ...rest
-  } = {}) => ({
+  }: DropzoneRootProps = {}) => ({
     onKeyDown: this.composeHandler(
       onKeyDown ? composeEventHandlers(onKeyDown, this.onKeyDown) : this.onKeyDown
     ),
@@ -325,9 +339,9 @@ class Dropzone extends React.Component {
     [refKey]: this.setNodeRef,
     tabIndex: this.props.disabled ? -1 : 0,
     ...rest
-  })
+    }) as DropzoneRootProps
 
-  getInputProps = ({ refKey = 'ref', onChange, onClick, ...rest } = {}) => {
+  getInputProps = ({ refKey = 'ref', onChange, onClick, ...rest }: DropzoneInputProps = {}) => {
     const { accept, multiple, name } = this.props
     const inputProps = {
       accept,
@@ -346,7 +360,7 @@ class Dropzone extends React.Component {
     return {
       ...inputProps,
       ...rest
-    }
+    } as DropzoneInputProps;
   }
 
   setNodeRef = node => {
@@ -395,6 +409,80 @@ class Dropzone extends React.Component {
 }
 
 export default Dropzone
+
+export interface DropzoneProps extends Pick<HTMLProps<HTMLElement>, PropTypes> {
+  children?: DropzoneRenderFunction;
+  getDataTransferItems?(event: React.DragEvent | ChangeEvent<HTMLInputElement> | DragEvent | Event): Promise<Files>;
+  onFileDialogCancel?(): void;
+  onDrop?: DropFilesEventHandler;
+  onDropAccepted?: DropFileEventHandler;
+  onDropRejected?: DropFileEventHandler;
+  maxSize?: number;
+  minSize?: number;
+  preventDropOnDocument?: boolean;
+  disableClick?: boolean;
+  disabled?: boolean;
+}
+
+type Files = Array<File | DataTransferItem>;
+
+interface State {
+  draggedFiles: Files;
+  acceptedFiles: Files;
+  rejectedFiles: Files;
+  isDragActive?: boolean;
+  isFocused?: boolean;
+}
+
+export interface DropzoneRootProps extends HTMLAttributes<HTMLElement> {
+  refKey?: string;
+  [key: string]: any;
+}
+
+export interface DropzoneInputProps extends InputHTMLAttributes<HTMLInputElement> {
+  refKey?: string;
+}
+
+export type DropzoneRenderFunction = (x: DropzoneRenderArgs) => JSX.Element;
+export type GetRootPropsFn = (props?: DropzoneRootProps) => DropzoneRootProps;
+export type GetInputPropsFn = (props?: DropzoneInputProps) => DropzoneInputProps;
+
+export type DropFileEventHandler = (
+  acceptedOrRejected: Files,
+  event: React.DragEvent
+) => void;
+
+export type DropFilesEventHandler = (
+  accepted: Files,
+  rejected: Files,
+  event: React.DragEvent
+) => void;
+
+export type DropzoneRenderArgs = {
+  draggedFiles: Files;
+  acceptedFiles: Files;
+  rejectedFiles: Files;
+  isDragActive: boolean;
+  isDragAccept: boolean;
+  isDragReject: boolean;
+  isFocused: boolean;
+  getRootProps: GetRootPropsFn;
+  getInputProps: GetInputPropsFn;
+  open: () => void;
+};
+
+type PropTypes = "accept"
+  | "multiple"
+  | "name"
+  | "onClick"
+  | "onFocus"
+  | "onBlur"
+  | "onKeyDown"
+  | "onDragStart"
+  | "onDragEnter"
+  | "onDragOver"
+  | "onDragLeave";
+
 
 Dropzone.propTypes = {
   /**

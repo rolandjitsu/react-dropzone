@@ -1,10 +1,9 @@
 import {
   getDataTransferItems,
   isIeOrEdge,
-  isKindFile,
   isDragDataWithFiles,
   composeEventHandlers
-} from './'
+} from '.'
 
 const files = [
   {
@@ -96,7 +95,7 @@ describe('getDataTransferItems', () => {
       }
     }
     expect(Object.keys(files[2])).toHaveLength(3)
-    getDataTransferItems(event, true)
+    getDataTransferItems(event)
     expect(Object.keys(files[2])).toHaveLength(3)
   })
 })
@@ -127,15 +126,6 @@ describe('isIeOrEdge', () => {
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.186 Safari/537.36'
 
     expect(isIeOrEdge(userAgent)).toBe(false)
-  })
-})
-
-describe('isKindFile()', () => {
-  it('should return true for DataTransferItem of kind "file"', () => {
-    expect(isKindFile({ kind: 'file' })).toBe(true)
-    expect(isKindFile({ kind: 'text/html' })).toBe(false)
-    expect(isKindFile({})).toBe(false)
-    expect(isKindFile(null)).toBe(false)
   })
 })
 

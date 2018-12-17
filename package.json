@@ -49,8 +49,28 @@
     "setupTestFrameworkScriptFile": "<rootDir>/testSetup.js",
     "clearMocks": true,
     "coveragePathIgnorePatterns": [
-      "/node_modules/",
+      "<rootDir>/dist/",
+      "<rootDir>/node_modules/",
+      "<rootDir>/out-tsc/",
       "<rootDir>/testSetup.js"
+    ],
+    "globals": {
+        "ts-jest": {
+            "tsConfig": "./tsconfig.spec.json",
+            "diagnostics": true
+      }
+    },
+    "transform": {
+        "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+        "ts",
+        "tsx",
+        "js",
+        "jsx",
+        "json",
+        "node"
     ]
   },
   "keywords": [
@@ -89,8 +109,10 @@
     "@commitlint/config-angular": "^7.0.1",
     "@commitlint/prompt": "^7.0.0",
     "@commitlint/prompt-cli": "^7.0.0",
-    "@types/react": "^16.4.6",
-    "@types/react-dom": "^16.0.4",
+    "@types/jest": "^23.3.10",
+    "@types/node": "^10.12.14",
+    "@types/react": "^16.7.17",
+    "@types/react-dom": "^16.0.11",
     "babel-cli": "^6.9.0",
     "babel-core": "^6.26.3",
     "babel-eslint": "*",
@@ -139,7 +161,8 @@
     "sinon": "^3.2.1",
     "style-loader": "^0.18.2",
     "tslint": "^5.9.1",
-    "typescript": "^2.8.1",
+    "ts-jest": "^23.10.5",
+    "typescript": "^3.0.3",
     "webpack": "^3.5.5"
   },
   "typings": "typings/react-dropzone.d.ts",
